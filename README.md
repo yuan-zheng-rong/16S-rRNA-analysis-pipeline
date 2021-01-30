@@ -12,19 +12,7 @@ usearch v10.0.240 https://www.drive5.com/usearch/download.html
 
 How to use:
 1.metadata.txt is needed,including sample name,group at least,and put it into result folder.
-SampleID	Group
-B1	B
-B2	B
-B3	B
-B4	B
-B5	B
-B6	B
-NB1	NB
-NB2	NB
-NB3	NB
-NB4	NB
-NB5	NB
-NB6	NB
+![微信图片_20210130170314.png](https://i.loli.net/2021/01/30/gJuvU2jmat8yPbZ.png)
 
 2.Put raw data in the seq folder  seq/*.fq.gz
 
