@@ -9,7 +9,7 @@ Rstudio 1.2.5019 https://www.rstudio.com/products/rstudio/download/#download
 vsearch v2.14.1 https://github.com/torognes/vsearch/releases  
 usearch v10.0.240 https://www.drive5.com/usearch/download.html  
 
-## How to use:  
+## How to use  
 1.metadata.txt is needed,including sample name,group at least,and put it into result folder.  
 ![微信图片_20210130170314.png](https://i.loli.net/2021/01/30/gJuvU2jmat8yPbZ.png)
 
