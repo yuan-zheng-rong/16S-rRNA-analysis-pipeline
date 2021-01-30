@@ -2,20 +2,20 @@
 
 ## Requirements
   
-System requirement: Windows 10 / Mac OS 10.12+ / Ubuntu 18.04  
-gitforwidnows 2.23.0 http://gitforwindows.org/(Windows only)  
-R 3.6.2 https://www.r-project.org/  
-Rstudio 1.2.5019 https://www.rstudio.com/products/rstudio/download/#download  
-vsearch v2.14.1 https://github.com/torognes/vsearch/releases  
-usearch v10.0.240 https://www.drive5.com/usearch/download.html  
+**System requirement:** Windows 10 / Mac OS 10.12+ / Ubuntu 18.04  
+**gitforwidnows** 2.23.0 http://gitforwindows.org/(Windows only)  
+**R** 3.6.2 https://www.r-project.org/  
+**Rstudio** 1.2.5019 https://www.rstudio.com/products/rstudio/download/#download  
+**vsearch** v2.14.1 https://github.com/torognes/vsearch/releases  
+**usearch** v10.0.240 https://www.drive5.com/usearch/download.html  
 
 ## How to use  
-1.metadata.txt is needed,including sample name,group at least,and put it into result folder.  
+**1.metadata.txt is needed,including sample name,group at least,and put it into result folder.**  
 ![微信图片_20210130170314.png](https://i.loli.net/2021/01/30/gJuvU2jmat8yPbZ.png)
 
-2.Put raw data in the seq folder  seq/*.fq.gz
+**2.Put raw data in the seq folder  seq/*.fq.gz**
 
-3.Specify the working directory and database location  
+**3.Specify the working directory and database location**  
 #Specify database location  
 db=/c/(your folder)  
   
