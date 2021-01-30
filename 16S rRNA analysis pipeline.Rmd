@@ -1,0 +1,413 @@
+---
+title: "analysis process of Seasonal breeding affects gut microbiota"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Specify the working directory and databaselocation
+    
+    db=/c/16sanalyse/public
+    wd=/c/16s
+    export PATH=$PATH:${db}/win
+    cd ${wd}
+   
+
+# 16S Amplicon pipeline
+    
+# Data processing
+
+## 1. Working directory and start file
+
+### 1.1 The original sequencing data were stored in the seq directory
+
+    mkdir -p seq
+
+### 1.2 Create a temporary file storage directory, which can be deleted after analysis
+ 
+    mkdir -p temp
+ 
+### 1.3 Experimental design document
+
+    cat -A result/metadata.txt | head -n3
+    sed -i 's/\r/\n/' result/metadata.txt
+    cat -A result/metadata.txt | head -n3
+    
+### 1.4 Raw data
+
+    # unzip the raw data
+    time gunzip seq/*.gz
+  
+    # check
+    ls -lh seq/
+    head -n4 seq/KO1_1.fq
+    
+## 2. Merge paired reads and label samples
+
+    time for i in `tail -n+2 result/metadata.txt | cut -f 1`;do
+      vsearch --fastq_mergepairs seq/${i}_combine_R1.fastq --reverse seq/${i}_combine_R2.fastq \
+      --fastqout temp/${i}.merged.fq --relabel ${i}.
+    done &
+    
+## 3. Cut primers and quality filter
+  
+     # cutB1
+     time vsearch --fastx_filter temp/B1.merged.fq \
+     --fastq_stripleft 34 --fastq_stripright 37 \
+     --fastq_maxee_rate 0.01 \
+     --fastaout temp/B1_filtered.fa
+  
+     # cutB2
+     time vsearch --fastx_filter temp/B2.merged.fq \
+      --fastq_stripleft 35 --fastq_stripright 37 \
+      --fastq_maxee_rate 0.01 \
+      --fastaout temp/B2_filtered.fa
+      
+     # cutB3
+     time vsearch --fastx_filter temp/B3.merged.fq \
+      --fastq_stripleft 35 --fastq_stripright 37 \
+      --fastq_maxee_rate 0.01 \
+      --fastaout temp/B3_filtered.fa
+     
+     # cutB4
+     time vsearch --fastx_filter temp/B4.merged.fq \
+      --fastq_stripleft 35 --fastq_stripright 37 \
+      --fastq_maxee_rate 0.01 \
+      --fastaout temp/B4_filtered.fa
+     
+      # cutB5
+      time vsearch --fastx_filter temp/B5.merged.fq \
+      --fastq_stripleft 36 --fastq_stripright 37 \
+      --fastq_maxee_rate 0.01 \
+      --fastaout temp/B5_filtered.fa
+      
+      # cutB6
+      time vsearch --fastx_filter temp/B6.merged.fq \
+      --fastq_stripleft 33 --fastq_stripright 32 \
+      --fastq_maxee_rate 0.01 \
+      --fastaout temp/B6_filtered.fa
+   
+      # cut NB1
+      time vsearch --fastx_filter temp/NB1.merged.fq \
+      --fastq_stripleft 37 --fastq_stripright 37 \
+      --fastq_maxee_rate 0.01 \
+      --fastaout temp/NB1_filtered.fa
+       
+      # cut NB2
+      time vsearch --fastx_filter temp/NB2.merged.fq \
+      --fastq_stripleft 37 --fastq_stripright 37 \
+      --fastq_maxee_rate 0.01 \
+      --fastaout temp/NB2_filtered.fa
+     
+      # cut NB3
+      time vsearch --fastx_filter temp/NB3.merged.fq \
+      --fastq_stripleft 34 --fastq_stripright 37 \
+      --fastq_maxee_rate 0.01 \
+      --fastaout temp/NB3_filtered.fa
+      
+      # cut NB4
+      time vsearch --fastx_filter temp/NB4.merged.fq \
+      --fastq_stripleft 35 --fastq_stripright 37 \
+      --fastq_maxee_rate 0.01 \
+      --fastaout temp/NB4_filtered.fa
+    
+      # cut NB5
+      time vsearch --fastx_filter temp/NB5.merged.fq \
+      --fastq_stripleft 35 --fastq_stripright 37 \
+      --fastq_maxee_rate 0.01 \
+      --fastaout temp/NB5_filtered.fa
+    
+      # cut NB6
+      time vsearch --fastx_filter temp/NB6.merged.fq \
+      --fastq_stripleft 35 --fastq_stripright 37 \
+      --fastq_maxee_rate 0.01 \
+      --fastaout temp/NB6_filtered.fa
+     
+      # Merge all samples into one file
+      cat temp/*.filtered.fa > filtered.fa
+      ls -lsh temp/filtered.fa
+      head -n 10 temp/filtered.fa
+      
+## 4. ASV Dereplicate and denoise
+
+### 4.1 Dereplication 
+
+     time vsearch --derep_fulllength temp/filtered.fa \
+      --output temp/uniques.fa --relabel Uni --minuniquesize 8 --sizeout
+     ls -lsh temp/uniques.fa
+     head -n 2 temp/uniques.fa
+     
+### 4.2 ASV denoise ASV 
+
+    # Denoise: predict biological sequences and filter chimeras
+     time usearch -unoise3 temp/uniques.fa \
+       -zotus temp/zotus.fa
+     
+    # Modify sequence name
+     sed 's/Zotu/ASV_/g' temp/zotus.fa > temp/otus.fa
+     head -n 2 temp/otus.fa
+     
+### 4.3 Reference-based chimera detect    
+       
+     mkdir -p result/raw
+     time vsearch --uchime_ref temp/otus.fa \
+        -db ${db}/usearch/rdp_16s_v16_sp.fa \
+        --nonchimeras result/raw/otus.fa
+       
+     sed -i 's/\r//g' result/raw/otus.fa
+       
+## 5. Feature table
+
+### 5.1 Creat Feature table    
+   
+       time usearch -otutab temp/filtered.fa -otus result/raw/otus.fa \
+         -otutabout result/raw/otutab.txt -threads 4
+   
+       sed -i 's/\r//' result/raw/otutab.txt
+       head -n3 result/raw/otutab.txt |cat -A
+       
+### 5.2 Remove plastid and non-Bacteria    
+    
+       time vsearch --sintax result/raw/otus.fa --db ${db}/usearch/rdp_16s_v16_sp.fa \
+         --tabbedout result/raw/otus.sintax --sintax_cutoff 0.6
+    
+     # Number of rows in original feature table
+       wc -l result/raw/otutab.txt
+       
+     # Output filtered and sorted OTU table
+       Rscript ${db}/script/otutab_filter_nonBac.R -h
+       Rscript ${db}/script/otutab_filter_nonBac.R \
+         --input result/raw/otutab.txt \
+         --taxonomy result/raw/otus.sintax \
+         --output result/otutab.txt\
+         --stat result/raw/otutab_nonBac.stat \
+         --discard result/raw/otus.sintax.discard
+       
+     # Rows of feature table after filtering
+       wc -l result/otutab.txt
+       
+     # filter
+       cut -f 1 result/otutab.txt | tail -n+2 > result/otutab.id
+       usearch -fastx_getseqs result/raw/otus.fa \
+         -labels result/otutab.id -fastaout result/otus.fa
+        
+       awk 'NR==FNR{a[$1]=$0}NR>FNR{print a[$1]}'\
+         result/raw/otus.sintax result/otutab.id \
+         > result/otus.sintax
+       
+       sed -i 's/\t$/\td:Unassigned/' result/otus.sintax
+       
+     # Summary OTUs table
+       usearch -otutab_stats result/otutab.txt \
+         -output result/otutab.stat
+       cat result/otutab.stat
+       
+
+### 5.3 normlize by subsample
+
+    mkdir -p result/alpha
+    Rscript ${db}/script/otutab_rare.R --input result/otutab.txt \
+      --depth 20122 --seed 1 \
+      --normalize result/otutab_rare.txt \
+      --output result/alpha/vegan.txt
+    usearch -otutab_stats result/otutab_rare.txt \
+      -output result/otutab_rare.stat
+    cat result/otutab_rare.stat
+    
+## 6.  Alpha diversity
+
+### 6.1 Rarefaction
+
+    time usearch -alpha_div_rare result/otutab_rare.txt \
+       -output result/alpha/alpha_rare.txt -method without_replacement
+
+### 6.2 High abundance bacteria were screened
+
+    Rscript ${db}/script/otu_mean.R --input result/otutab.txt \
+      --design result/metadata.txt \
+      --group Group --thre 0 \
+      --output result/otutab_mean.txt
+    head -n3 result/otutab_mean.txt
+
+    awk 'BEGIN{OFS=FS="\t"}{if(FNR==1) {for(i=2;i<=NF;i++) a[i]=$i;} \
+        else {for(i=2;i<=NF;i++) if($i>0.1) print $1, a[i];}}' \
+        result/otutab_mean.txt > result/alpha/otu_group_exist.txt
+    head result/alpha/otu_group_exist.txt
+
+## 7. Beta diversity
+
+    mkdir -p result/beta/
+    
+    # Make OTU tree
+    time usearch -cluster_agg result/otus.fa -treeout result/otus.tree
+    
+    # Five distance matrices are generated：bray_curtis, euclidean, jaccard, manhatten, unifrac
+    time usearch -beta_div result/otutab_rare.txt -tree result/otus.tree \
+      -filename_prefix result/beta/ # 1s
+    ```
+## 8. Taxonomy summary
+  
+    cut -f 1,4 result/otus.sintax \
+      |sed 's/\td/\tk/;s/:/__/g;s/,/;/g;s/"//g;s/\/Chloroplast//' \
+      > result/taxonomy2.txt
+    head -n3 result/taxonomy2.txt
+    
+    # Generate species table，fill in blank as unassigned
+       awk 'BEGIN{OFS=FS="\t"}{delete a;  a["k"]="Unassigned";a["p"]="Unassigned";a["c"]="Unassigned";a["o"]="Unassigned";a["f"]="Unassigned";a["g"]="Unassigned";a["s"]="Unassigned";\
+        split($2,x,";");for(i in x){split(x[i],b,"__");a[b[1]]=b[2];} \
+        print $1,a["k"],a["p"],a["c"],a["o"],a["f"],a["g"],a["s"];}' \
+        result/taxonomy2.txt > temp/otus.tax
+      sed 's/;/\t/g;s/.__//g;' temp/otus.tax|cut -f 1-8 | \
+        sed '1 s/^/OTUID\tKingdom\tPhylum\tClass\tOrder\tFamily\tGenus\tSpecies\n/' \
+         > result/taxonomy.txt
+      head -n3 result/taxonomy.txt
+
+    # statistical phylum, class, order, family, genus
+    mkdir -p result/tax
+    for i in p c o f g;do
+      usearch -sintax_summary result/otus.sintax \
+      -otutabin result/otutab_rare.txt -rank ${i} \
+      -output result/tax/sum_${i}.txt
+    done
+    sed -i 's/(//g;s/)//g;s/\"//g;s/\#//g;s/\/Chloroplast//g' result/tax/sum_*.txt
+    
+    # List all files
+    ls -sh result/tax/sum_*.txt
+    head -n3 result/tax/sum_g.txt
+
+## 9. Reference comparison
+
+    mkdir -p result/gg/
+    usearch -otutab temp/filtered.fa -otus ${db}/gg/97_otus.fasta \
+    	-otutabout result/gg/otutab.txt -threads 4
+    head -n3 result/gg/otutab.txt
+    
+    # Statistics
+    usearch -otutab_stats result/gg/otutab.txt -output result/gg/otutab.stat
+    cat result/gg/otutab.stat
+
+## 10.Space cleaning and data submission
+
+    rm -rf temp/*.fq
+   
+    gzip seq/*
+
+    cd seq
+    md5sum *_combine_R1.fastq.gz > md5sum1.txt
+    md5sum *_combine_R2.fastq.gz > md5sum2.txt
+    paste md5sum1.txt md5sum2.txt | awk '{print $2"\t"$1"\t"$4"\t"$3}' | sed 's/*//g' > ../result/md5sum.txt
+    rm md5sum*
+    cd ..
+    cat result/md5sum.txt
+
+
+# Mapping diversity and species analysis with R
+
+## 1. Alpha diversity
+
+### 1.1 Alpha diversity boxplot
+
+    for i in `head -n1 result/alpha/vegan.txt|cut -f 2-`;do
+      Rscript ${db}/script/alpha_boxplot.R --alpha_index ${i} \
+        --input result/alpha/vegan.txt --design result/metadata.txt \
+        --group Group --output result/alpha/ \
+        --width 89 --height 59
+    done
+
+### 1.2 rarefaction Curve
+
+    Rscript ${db}/script/alpha_rare_curve.R \
+      --input result/alpha/alpha_rare.txt --design result/metadata.txt \
+      --group Group --output result/alpha/ \
+      --width 89 --height 59
+
+## 2. Beta diversity
+
+### 2.1 pheatmap
+
+    # bray_curtis distance
+    bash ${db}/script/sp_pheatmap.sh \
+      -f result/beta/bray_curtis.txt \
+      -H 'TRUE' -u 5 -v 5
+      
+    cut -f 1-2 result/metadata.txt > temp/group.txt
+    
+    bash ${db}/script/sp_pheatmap.sh \
+      -f result/beta/bray_curtis.txt \
+      -H 'TRUE' -u 8.9 -v 5.6 \
+      -P temp/group.txt -Q temp/group.txt
+    
+### 2.2 PCoA analysis
+
+     Rscript ${db}/script/beta_pcoa.R \
+        --input result/beta/bray_curtis.txt --design result/metadata.txt \
+        --group Group --output result/beta/bray_curtis.pcoa.pdf \
+        --width 89 --height 59
+
+## 3. Taxonomy
+
+### 3.1 Stackplot
+
+    for i in p c o f g; do
+    Rscript ${db}/script/tax_stackplot.R \
+      --input result/tax/sum_${i}.txt --design result/metadata.txt \
+      --group Group --output result/tax/sum_${i}.stackplot \
+      --legend 8 --width 89 --height 89; done
+
+### 3.2 circlize
+
+    i=g
+    Rscript ${db}/script/tax_circlize.R \
+      --input result/tax/sum_${i}.txt --design result/metadata.txt \
+      --group Group --legend 5
+      
+    mv circlize.pdf result/tax/sum_${i}.circlize.pdf
+    mv circlize_legend.pdf result/tax/sum_${i}.circlize_legend.pdf
+
+# Difference comparison
+
+## 1. The R Programming Language
+
+### 1.1 Difference comparison
+    
+    mkdir -p result/compare/
+
+    compare="B-NB"
+    Rscript ${db}/script/compare.R \
+      --input result/otutab.txt --design result/metadata.txt \
+      --group Group --compare ${compare} --threshold 0.01 \
+      --method edgeR --pvalue 0.05 --fdr 0.2 \
+      --output result/compare/
+
+
+### 1.2 manhattan plot
+
+    bash ${db}/script/compare_manhattan.sh -i result/compare/${compare}.txt \
+       -t result/taxonomy.txt \
+       -p result/tax/sum_p.txt \
+       -w 366 -v 135 -s 6 -l 10 \
+       -o result/compare/${compare}.manhattan.p.pdf
+
+## 2. STAMP
+    
+    Rscript ${db}/script/format2stamp.R -h
+    mkdir -p result/stamp
+    Rscript ${db}/script/format2stamp.R --input result/otutab.txt \
+      --taxonomy result/taxonomy.txt --threshold 0.01 \
+      --output result/stamp/tax
+
+## 3. LEfSe
+
+    Rscript ${db}/script/format2lefse.R -h
+    Rscript ${db}/script/format2lefse.R --input result/otutab.txt \
+      --taxonomy result/taxonomy.txt --design result/metadata.txt \
+      --group Group --threshold 0.01 \
+      --output result/LEfSe
+      
+    
+# Function prediction    
+    
+    http://www.ehbio.com/ImageGP 
+    
+    
+    
