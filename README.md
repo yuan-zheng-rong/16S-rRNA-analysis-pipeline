@@ -2,7 +2,7 @@
 
 ## Requirements
   
-**System requirement:** Windows 10 / Mac OS 10.12+ / Ubuntu 18.04  
+**System requirement** Windows 10 / Mac OS 10.12+ / Ubuntu 18.04  
 **gitforwidnows** 2.23.0 http://gitforwindows.org/(Windows only)  
 **R** 3.6.2 https://www.r-project.org/  
 **Rstudio** 1.2.5019 https://www.rstudio.com/products/rstudio/download/#download  
