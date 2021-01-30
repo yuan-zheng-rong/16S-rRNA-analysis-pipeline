@@ -1,6 +1,6 @@
 # 16S-rRNA-analysis-pipeline
 
-**Requirements：**
+#Requirements：
   
 System requirement: Windows 10 / Mac OS 10.12+ / Ubuntu 18.04  
 gitforwidnows 2.23.0 http://gitforwindows.org/(Windows only)  
