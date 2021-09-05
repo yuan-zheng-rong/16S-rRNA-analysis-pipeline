@@ -5,7 +5,7 @@ output:
   pdf_document: default
 ---
 
-# Specify the working directory and databaselocation
+# Specify the working directory and database location
     
     db=/c/16sanalyse/public
     wd=/c/16s
@@ -40,7 +40,7 @@ output:
   
     # check
     ls -lh seq/
-    head -n4 seq/KO1_1.fq
+    head -n4 seq/B1_combine_R1.fastq
     
 ## 2. Merge paired reads and label samples
 
@@ -243,7 +243,7 @@ output:
     
     # Five distance matrices are generated：bray_curtis, euclidean, jaccard, manhatten, unifrac
     time usearch -beta_div result/otutab_rare.txt -tree result/otus.tree \
-      -filename_prefix result/beta/ # 1s
+      -filename_prefix result/beta/ 
     ```
 ## 8. Taxonomy summary
   
@@ -408,6 +408,3 @@ output:
 # Function prediction    
     
     http://www.ehbio.com/ImageGP 
-    
-    
-    
